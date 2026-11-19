@@ -60,6 +60,8 @@ component PlainLog {
         content-width: max(root.wrap ? 0px : body.preferred-width, self.visible-width);
         content-height: max(self.visible-height, body.preferred-height);
         body := Text {
+            // Elements without a position are centred, short text included.
+            y: 0;
             width: scroll.content-width;
             text: root.text;
             wrap: root.wrap ? word-wrap : no-wrap;
@@ -102,6 +104,8 @@ component SelectableLog {
             content-height: scroll.content-height;
             visible-height: scroll.visible-height;
             body := StyledText {
+                // Elements without a position are centred, short text included.
+                y: 0;
                 width: scroll.content-width;
                 // Interpolated, the text stays plain: no markup is parsed in it.
                 text: @markdown("\{root.text}");

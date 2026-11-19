@@ -121,8 +121,8 @@ fn ctrl(window: &slint::Window, key: char) {
 }
 
 /// Lines that are markup to `@markdown`, and longer than the view is wide.
-const MARKUP: &str = "*not emphasis* <u>not underlined</u> `not code` [not](a link)
-    # not a heading
+const MARKUP: &str = "*not emphasis* <u>not underlined</u> `not code` [not](a link)\n\
+    # not a heading\n\
     - not a list item, and long enough to run well past the right edge of the view";
 
 #[test]
@@ -160,10 +160,7 @@ fn selectable_text_scrolls_a_notch_at_a_time() {
     let lines = (0..50)
         .map(|i| format!("line {i}"))
         .collect::<Vec<_>>()
-        .join(
-            "
-",
-        );
+        .join("\n");
     let view = LogHarness::new().unwrap();
     view.set_selectable(true);
     view.set_follow_end(false);
@@ -192,6 +189,25 @@ fn unwrapped_lines_run_past_the_edge() {
         assert!(
             text_area(&snapshot(&wrapped)) != text_area(&snapshot(&unwrapped)),
             "selectable: {selectable}"
+        );
+    }
+}
+
+#[test]
+fn short_text_starts_at_the_top() {
+    let _ = platform();
+    for selectable in [false, true] {
+        let view = LogHarness::new().unwrap();
+        view.set_selectable(selectable);
+        view.set_text("one line".into());
+        let snapshot = snapshot(&view);
+        let width = snapshot.width() as usize;
+        let rows = snapshot.as_slice().chunks(width).collect::<Vec<_>>();
+        // The card's middle row, left of the scroll bar, is blank.
+        let blank = &rows[rows.len() / 2][12..width - 30];
+        assert!(
+            blank.iter().all(|p| *p == blank[0]),
+            "selectable: {selectable}: the line isn't at the top"
         );
     }
 }
