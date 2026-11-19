@@ -1,0 +1,18 @@
+import { Palette } from "std-widgets.slint";
+
+// WinUI's theme resources (Common_themeresources_any.xaml), so windows layer
+// like Windows 11's own apps: a base, then a translucent content layer.
+export global Fluent {
+    out property <bool> dark: Palette.color-scheme == ColorScheme.dark;
+    // SolidBackgroundFillColorBase: the base when Windows draws no backdrop.
+    out property <color> base: dark ? #202020 : #f3f3f3;
+    // LayerFillColorDefault: the content layer over the base.
+    out property <color> layer: dark ? #3a3a3a4c : #ffffff80;
+    // CardStrokeColorDefault: the content layer's edge.
+    out property <color> stroke: dark ? #00000019 : #0000000f;
+    // CardBackgroundFillColorDefault: a card on the content layer.
+    out property <color> card: dark ? #ffffff0d : #ffffffb3;
+    // SubtleFillColorSecondary/Tertiary: a subtle button hovered, pressed.
+    out property <color> subtle-hover: dark ? #ffffff0f : #00000009;
+    out property <color> subtle-pressed: dark ? #ffffff0a : #00000006;
+}

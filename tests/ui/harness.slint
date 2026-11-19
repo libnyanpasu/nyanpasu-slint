@@ -1,0 +1,30 @@
+import { LogView, WheelSteps } from "@nyanpasu-slint";
+
+// WheelSteps over 100 lines of 10px in a 100px view.
+export component WheelHarness inherits Window {
+    in property <int> wheel-lines: 3;
+    out property <length> content-y: steps.content-y;
+    width: 100px;
+    height: 100px;
+    steps := WheelSteps {
+        wheel-lines: root.wheel-lines;
+        line-height: 10px;
+        content-height: 1000px;
+        visible-height: 100px;
+    }
+}
+
+export component LogHarness inherits Window {
+    in property <string> text;
+    in property <bool> follow-end: true;
+    in property <bool> selectable;
+    in property <bool> wrap: true;
+    width: 200px;
+    height: 120px;
+    LogView {
+        text: root.text;
+        follow-end: root.follow-end;
+        selectable: root.selectable;
+        wrap: root.wrap;
+    }
+}

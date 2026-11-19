@@ -1,0 +1,173 @@
+import { Palette, ScrollView } from "std-widgets.slint";
+import { Fluent } from "fluent.slint";
+
+// Takes the wheel over a scroll view as Notepad++ (Scintilla) does: notches
+// add up, and each whole one moves the text by the system's wheel lines at
+// once, without the animation Flickable plays. A frame per notch instead of
+// some 28 at 160 Hz, and every frame redraws all the visible text.
+//
+// Either lay it over the scroll view, or make it the parent of the content so
+// that the content sees the pointer first and only the wheel reaches it.
+export component WheelSteps inherits TouchArea {
+    // Lines a notch scrolls, or a negative number for a screen at a time:
+    // `nyanpasu_slint::wheel_lines()`.
+    in property <int> wheel-lines: 3;
+    in property <length> line-height;
+    in-out property <length> content-y;
+    in property <length> content-height;
+    in property <length> visible-height;
+    // Slint reports a wheel notch as 60px.
+    property <length> pending;
+    scroll-event(event) => {
+        self.pending += event.delta-y;
+        if abs(self.pending) < 60px {
+            return accept;
+        }
+        let notches = self.pending > 0 ? floor(self.pending / 60px) : -floor(-self.pending / 60px);
+        self.pending -= notches * 60px;
+        // A screen a notch, less a line.
+        let step = self.wheel-lines < 0 ? self.visible-height - self.line-height : self.wheel-lines * self.line-height;
+        self.content-y = max(min(0px, self.visible-height - self.content-height), min(0px, self.content-y + notches * step));
+        accept
+    }
+}
+
+// A scroll view that keeps its end in view while `follow-end` and the user
+// hasn't scrolled up.
+component FollowingScrollView inherits ScrollView {
+    in property <bool> follow-end;
+    property <length> previous-bottom;
+    changed content-height => {
+        if root.follow-end && self.content-y <= root.previous-bottom + 2px {
+            self.content-y = min(0px, self.visible-height - self.content-height);
+        }
+        root.previous-bottom = min(0px, self.visible-height - self.content-height);
+    }
+    @children
+}
+
+// Text that can't be selected, with WheelSteps laid over it.
+component PlainLog {
+    in property <string> text;
+    in property <string> font-family;
+    in property <length> font-size;
+    in property <bool> follow-end;
+    in property <bool> wrap;
+    in property <int> wheel-lines;
+    in property <length> line-height;
+    scroll := FollowingScrollView {
+        follow-end: root.follow-end;
+        content-width: max(root.wrap ? 0px : body.preferred-width, self.visible-width);
+        content-height: max(self.visible-height, body.preferred-height);
+        body := Text {
+            width: scroll.content-width;
+            text: root.text;
+            wrap: root.wrap ? word-wrap : no-wrap;
+            font-size: root.font-size;
+            font-family: root.font-family;
+            color: Palette.foreground;
+        }
+    }
+    WheelSteps {
+        // Fluent's vertical scroll bar lies over the last 14px of the view;
+        // left uncovered so it can still be dragged.
+        width: scroll.visible-width - 14px;
+        height: scroll.visible-height;
+        wheel-lines: root.wheel-lines;
+        line-height: root.line-height;
+        content-y <=> scroll.content-y;
+        content-height: scroll.content-height;
+        visible-height: scroll.visible-height;
+    }
+}
+
+// Selectable text, the parent of which is WheelSteps: the text takes the
+// presses that select, and only the wheel, which it ignores, goes up.
+component SelectableLog {
+    in property <string> text;
+    in property <string> font-family;
+    in property <length> font-size;
+    in property <bool> follow-end;
+    in property <bool> wrap;
+    in property <int> wheel-lines;
+    in property <length> line-height;
+    scroll := FollowingScrollView {
+        follow-end: root.follow-end;
+        content-width: max(root.wrap ? 0px : body.preferred-width, self.visible-width);
+        content-height: max(self.visible-height, body.preferred-height);
+        WheelSteps {
+            wheel-lines: root.wheel-lines;
+            line-height: root.line-height;
+            content-y <=> scroll.content-y;
+            content-height: scroll.content-height;
+            visible-height: scroll.visible-height;
+            body := StyledText {
+                width: scroll.content-width;
+                // Interpolated, the text stays plain: no markup is parsed in it.
+                text: @markdown("\{root.text}");
+                selectable: true;
+                default-font-size: root.font-size;
+                default-font-family: root.font-family;
+                default-color: Palette.foreground;
+            }
+        }
+    }
+}
+
+// Read-only text on a card, which WinUI lays over the content layer. With
+// `follow-end` it keeps the newest line in view unless the user has scrolled
+// up. Text rather than a read-only TextInput, which lays out all of it on
+// every frame of a scroll.
+//
+// `selectable` lets the mouse select the text, and Ctrl+A and Ctrl+C work on
+// it, through a StyledText. Without it the view holds a plain Text, so it
+// keeps nothing of the selection: StyledText takes presses even when it
+// can't select.
+export component LogView inherits Rectangle {
+    in property <string> text;
+    in property <string> font-family;
+    in property <length> font-size: 12px;
+    in property <bool> follow-end: true;
+    in property <bool> selectable;
+    // Without wrapping, long lines scroll sideways.
+    in property <bool> wrap: true;
+    in property <int> wheel-lines: 3;
+    background: Fluent.card;
+    border-width: 1px;
+    border-color: Fluent.stroke;
+    border-radius: 4px;
+    min-height: 80px;
+    vertical-stretch: 1;
+    if !root.selectable: PlainLog {
+        x: 12px;
+        y: 8px;
+        width: parent.width - 24px;
+        height: parent.height - 16px;
+        text: root.text;
+        font-family: root.font-family;
+        font-size: root.font-size;
+        follow-end: root.follow-end;
+        wrap: root.wrap;
+        wheel-lines: root.wheel-lines;
+        line-height: line.preferred-height;
+    }
+    if root.selectable: SelectableLog {
+        x: 12px;
+        y: 8px;
+        width: parent.width - 24px;
+        height: parent.height - 16px;
+        text: root.text;
+        font-family: root.font-family;
+        font-size: root.font-size;
+        follow-end: root.follow-end;
+        wrap: root.wrap;
+        wheel-lines: root.wheel-lines;
+        line-height: line.preferred-height;
+    }
+    line := Text {
+        visible: false;
+        text: " ";
+        font-size: root.font-size;
+        font-family: root.font-family;
+    }
+}

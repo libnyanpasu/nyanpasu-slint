@@ -1,0 +1,61 @@
+import { Palette } from "std-widgets.slint";
+import { Fluent } from "fluent.slint";
+
+// The translucent layer content is drawn on, edged like WinUI's.
+export component ContentLayer inherits Rectangle {
+    background: Fluent.layer;
+    Rectangle {
+        y: 0;
+        height: 1px;
+        background: Fluent.stroke;
+    }
+    Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Fluent.stroke;
+    }
+    @children
+}
+
+// WinUI's subtle button: no fill until hovered, an outlined icon and a label.
+export component SubtleButton inherits Rectangle {
+    in property <string> text;
+    // A 16×16 outline, in SVG path syntax.
+    in property <string> icon;
+    callback clicked;
+    height: 32px;
+    horizontal-stretch: 0;
+    border-radius: 4px;
+    background: touch.pressed ? Fluent.subtle-pressed : touch.has-hover ? Fluent.subtle-hover : transparent;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-action-default => { root.clicked(); }
+    HorizontalLayout {
+        padding-left: 11px;
+        padding-right: 11px;
+        spacing: 8px;
+        VerticalLayout {
+            alignment: center;
+            Path {
+                width: 16px;
+                height: 16px;
+                viewbox-width: 16;
+                viewbox-height: 16;
+                commands: root.icon;
+                stroke: Palette.foreground;
+                stroke-width: 1px;
+                accessible-role: none;
+            }
+        }
+        Text {
+            text: root.text;
+            color: Palette.foreground;
+            vertical-alignment: center;
+            accessible-role: none;
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
