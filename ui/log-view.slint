@@ -2,9 +2,10 @@ import { Palette, ScrollView } from "std-widgets.slint";
 import { Fluent } from "fluent.slint";
 
 // Takes the wheel over a scroll view as Notepad++ (Scintilla) does: notches
-// add up, and each whole one moves the text by the system's wheel lines at
-// once, without the animation Flickable plays. A frame per notch instead of
-// some 28 at 160 Hz, and every frame redraws all the visible text.
+// add up, and each whole one moves the text by the system's wheel lines (or,
+// tilted sideways, wheel characters) at once, without the animation Flickable
+// plays. A frame per notch instead of some 28 at 160 Hz, and every frame
+// redraws all the visible text.
 //
 // Either lay it over the scroll view, or make it the parent of the content so
 // that the content sees the pointer first and only the wheel reaches it.
@@ -16,18 +17,34 @@ export component WheelSteps inherits TouchArea {
     in-out property <length> content-y;
     in property <length> content-height;
     in property <length> visible-height;
+    // Characters a sideways notch scrolls: `nyanpasu_slint::wheel_chars()`.
+    // Without `content-width`, the text doesn't scroll sideways.
+    in property <int> wheel-chars: 3;
+    in property <length> char-width;
+    in-out property <length> content-x;
+    in property <length> content-width;
+    in property <length> visible-width;
     // Slint reports a wheel notch as 60px.
-    property <length> pending;
+    property <length> pending-y;
+    property <length> pending-x;
+    pure function whole-notches(delta: length) -> float {
+        delta > 0 ? floor(delta / 60px) : -floor(-delta / 60px)
+    }
     scroll-event(event) => {
-        self.pending += event.delta-y;
-        if abs(self.pending) < 60px {
-            return accept;
+        self.pending-y += event.delta-y;
+        self.pending-x += event.delta-x;
+        let rows = self.whole-notches(self.pending-y);
+        let columns = self.whole-notches(self.pending-x);
+        self.pending-y -= rows * 60px;
+        self.pending-x -= columns * 60px;
+        if rows != 0 {
+            // A screen a notch, less a line.
+            let step = self.wheel-lines < 0 ? self.visible-height - self.line-height : self.wheel-lines * self.line-height;
+            self.content-y = max(min(0px, self.visible-height - self.content-height), min(0px, self.content-y + rows * step));
         }
-        let notches = self.pending > 0 ? floor(self.pending / 60px) : -floor(-self.pending / 60px);
-        self.pending -= notches * 60px;
-        // A screen a notch, less a line.
-        let step = self.wheel-lines < 0 ? self.visible-height - self.line-height : self.wheel-lines * self.line-height;
-        self.content-y = max(min(0px, self.visible-height - self.content-height), min(0px, self.content-y + notches * step));
+        if columns != 0 {
+            self.content-x = max(min(0px, self.visible-width - self.content-width), min(0px, self.content-x + columns * self.wheel-chars * self.char-width));
+        }
         accept
     }
 }
@@ -55,6 +72,8 @@ component PlainLog {
     in property <bool> wrap;
     in property <int> wheel-lines;
     in property <length> line-height;
+    in property <int> wheel-chars;
+    in property <length> char-width;
     scroll := FollowingScrollView {
         follow-end: root.follow-end;
         content-width: max(root.wrap ? 0px : body.preferred-width, self.visible-width);
@@ -80,6 +99,11 @@ component PlainLog {
         content-y <=> scroll.content-y;
         content-height: scroll.content-height;
         visible-height: scroll.visible-height;
+        wheel-chars: root.wheel-chars;
+        char-width: root.char-width;
+        content-x <=> scroll.content-x;
+        content-width: scroll.content-width;
+        visible-width: scroll.visible-width;
     }
 }
 
@@ -93,6 +117,8 @@ component SelectableLog {
     in property <bool> wrap;
     in property <int> wheel-lines;
     in property <length> line-height;
+    in property <int> wheel-chars;
+    in property <length> char-width;
     scroll := FollowingScrollView {
         follow-end: root.follow-end;
         content-width: max(root.wrap ? 0px : body.preferred-width, self.visible-width);
@@ -103,6 +129,11 @@ component SelectableLog {
             content-y <=> scroll.content-y;
             content-height: scroll.content-height;
             visible-height: scroll.visible-height;
+            wheel-chars: root.wheel-chars;
+            char-width: root.char-width;
+            content-x <=> scroll.content-x;
+            content-width: scroll.content-width;
+            visible-width: scroll.visible-width;
             body := StyledText {
                 // Elements without a position are centred, short text included.
                 y: 0;
@@ -136,6 +167,8 @@ export component LogView inherits Rectangle {
     // Without wrapping, long lines scroll sideways.
     in property <bool> wrap: true;
     in property <int> wheel-lines: 3;
+    // Characters a sideways notch scrolls: `nyanpasu_slint::wheel_chars()`.
+    in property <int> wheel-chars: 3;
     background: Fluent.card;
     border-width: 1px;
     border-color: Fluent.stroke;
@@ -154,6 +187,9 @@ export component LogView inherits Rectangle {
         wrap: root.wrap;
         wheel-lines: root.wheel-lines;
         line-height: line.preferred-height;
+        wheel-chars: root.wheel-chars;
+        // A space's width: a character's, in a monospace font.
+        char-width: line.preferred-width;
     }
     if root.selectable: SelectableLog {
         x: 12px;
@@ -167,6 +203,9 @@ export component LogView inherits Rectangle {
         wrap: root.wrap;
         wheel-lines: root.wheel-lines;
         line-height: line.preferred-height;
+        wheel-chars: root.wheel-chars;
+        // A space's width: a character's, in a monospace font.
+        char-width: line.preferred-width;
     }
     line := Text {
         visible: false;

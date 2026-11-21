@@ -26,6 +26,15 @@ fn wheel(window: &slint::Window, notches: f32) {
     });
 }
 
+/// A wheel tilted sideways; winit reports a tilt right as a negative delta.
+fn tilt(window: &slint::Window, notches: f32) {
+    window.dispatch_event(WindowEvent::PointerScrolled {
+        position: LogicalPosition::new(50., 50.),
+        delta_x: notches * 60.,
+        delta_y: 0.,
+    });
+}
+
 #[test]
 fn a_notch_scrolls_the_system_wheel_lines() {
     let _ = platform();
@@ -42,6 +51,25 @@ fn a_notch_scrolls_the_system_wheel_lines() {
     assert_eq!(view.get_content_y(), 0.);
     wheel(view.window(), -1000.);
     assert_eq!(view.get_content_y(), -900.);
+}
+
+#[test]
+fn a_sideways_notch_scrolls_the_system_wheel_chars() {
+    let _ = platform();
+    let view = WheelHarness::new().unwrap();
+    tilt(view.window(), -1.);
+    assert_eq!(view.get_content_x(), -24.);
+    assert_eq!(view.get_content_y(), 0.);
+    // Half notches add up to a whole one.
+    tilt(view.window(), -0.5);
+    assert_eq!(view.get_content_x(), -24.);
+    tilt(view.window(), -0.5);
+    assert_eq!(view.get_content_x(), -48.);
+    // Never past the start or the end.
+    tilt(view.window(), 10.);
+    assert_eq!(view.get_content_x(), 0.);
+    tilt(view.window(), -1000.);
+    assert_eq!(view.get_content_x(), -900.);
 }
 
 #[test]
@@ -189,6 +217,24 @@ fn unwrapped_lines_run_past_the_edge() {
         assert!(
             text_area(&snapshot(&wrapped)) != text_area(&snapshot(&unwrapped)),
             "selectable: {selectable}"
+        );
+    }
+}
+
+#[test]
+fn unwrapped_lines_scroll_sideways_a_notch_at_a_time() {
+    let _ = platform();
+    for selectable in [false, true] {
+        let view = LogHarness::new().unwrap();
+        view.set_selectable(selectable);
+        view.set_follow_end(false);
+        view.set_wrap(false);
+        view.set_text(MARKUP.into());
+        let start = text_area(&snapshot(&view));
+        tilt(view.window(), -1.);
+        assert!(
+            start != text_area(&snapshot(&view)),
+            "selectable: {selectable}: the tilt didn't scroll"
         );
     }
 }

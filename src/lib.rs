@@ -19,7 +19,7 @@ pub mod testing;
 mod window;
 
 pub use font::monospace_font;
-pub use window::{centre, wheel_lines};
+pub use window::{centre, wheel_chars, wheel_lines};
 
 #[cfg(all(test, feature = "testing"))]
 mod render_tests;

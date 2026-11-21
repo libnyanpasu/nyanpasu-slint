@@ -19,7 +19,7 @@ Move them together.
 | `ContentLayer` | The translucent layer content is drawn on, edged like WinUI's. |
 | `SubtleButton` | WinUI's subtle button: an outlined 16×16 path icon and a label, filled only on hover. |
 | `LogView` | Read-only text on a card: optionally selectable, wrapped or scrolling sideways, following its end. |
-| `WheelSteps` | Wheel scrolling by the system's wheel lines, one frame a notch instead of an animation. |
+| `WheelSteps` | Wheel scrolling by the system's wheel lines (sideways, wheel characters), one frame a notch instead of an animation. |
 
 Rust (`src/`):
 
@@ -28,6 +28,7 @@ Rust (`src/`):
 | `monospace_font()` | The first installed family of Clash Nyanpasu's monospace stack. |
 | `centre()` | Opens a window in the middle of the primary monitor. |
 | `wheel_lines()` | The lines a wheel notch scrolls (Windows' mouse settings), for `wheel-lines`. |
+| `wheel_chars()` | The characters a sideways wheel notch scrolls (Windows' mouse settings), for `wheel-chars`. |
 | `testing::HeadlessPlatform` | Feature `testing`: a software-rendered headless platform with a test clock and clipboard. |
 
 ## Use
@@ -53,6 +54,7 @@ LogView {
     text: root.log;
     font-family: root.monospace-font; // nyanpasu_slint::monospace_font()
     wheel-lines: root.wheel-lines;    // nyanpasu_slint::wheel_lines()
+    wheel-chars: root.wheel-chars;    // nyanpasu_slint::wheel_chars()
     selectable: true;
     wrap: false;
 }

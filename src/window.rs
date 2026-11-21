@@ -50,3 +50,30 @@ pub fn wheel_lines() -> i32 {
 pub fn wheel_lines() -> i32 {
     3
 }
+
+/// Characters a sideways wheel notch scrolls (Windows' mouse settings). 3
+/// elsewhere. `LogView` and `WheelSteps` take it as `wheel-chars`.
+#[cfg(windows)]
+pub fn wheel_chars() -> i32 {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        SPI_GETWHEELSCROLLCHARS, SystemParametersInfoW,
+    };
+    let mut chars = 3u32;
+    let read = unsafe {
+        SystemParametersInfoW(
+            SPI_GETWHEELSCROLLCHARS,
+            0,
+            std::ptr::from_mut(&mut chars).cast(),
+            0,
+        )
+    };
+    match read {
+        0 => 3,
+        _ => i32::try_from(chars).unwrap_or(3),
+    }
+}
+
+#[cfg(not(windows))]
+pub fn wheel_chars() -> i32 {
+    3
+}
