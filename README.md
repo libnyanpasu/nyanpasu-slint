@@ -19,7 +19,7 @@ Move them together.
 | `ContentLayer` | The translucent layer content is drawn on, edged like WinUI's. |
 | `SubtleButton` | WinUI's subtle button: an outlined 16×16 path icon and a label, filled only on hover. |
 | `LogView` | Read-only text on a card: optionally selectable, wrapped or scrolling sideways, following its end. |
-| `WheelSteps` | Wheel scrolling by the system's wheel lines (sideways, wheel characters), one frame a notch instead of an animation. |
+| `WheelSteps` | Wheel scrolling by the system's wheel lines (tilted sideways or with Shift, wheel characters), one frame a notch instead of an animation. |
 
 Rust (`src/`):
 

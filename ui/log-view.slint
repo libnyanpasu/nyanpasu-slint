@@ -3,9 +3,9 @@ import { Fluent } from "fluent.slint";
 
 // Takes the wheel over a scroll view as Notepad++ (Scintilla) does: notches
 // add up, and each whole one moves the text by the system's wheel lines (or,
-// tilted sideways, wheel characters) at once, without the animation Flickable
-// plays. A frame per notch instead of some 28 at 160 Hz, and every frame
-// redraws all the visible text.
+// tilted sideways or with Shift held, wheel characters) at once, without the
+// animation Flickable plays. A frame per notch instead of some 28 at 160 Hz,
+// and every frame redraws all the visible text.
 //
 // Either lay it over the scroll view, or make it the parent of the content so
 // that the content sees the pointer first and only the wheel reaches it.
@@ -31,8 +31,11 @@ export component WheelSteps inherits TouchArea {
         delta > 0 ? floor(delta / 60px) : -floor(-delta / 60px)
     }
     scroll-event(event) => {
-        self.pending-y += event.delta-y;
-        self.pending-x += event.delta-x;
+        // Shift turns the wheel sideways, as browsers do; where the system
+        // already does (macOS), the delta arrives sideways.
+        let sideways = event.modifiers.shift && event.delta-x == 0;
+        self.pending-y += sideways ? 0px : event.delta-y;
+        self.pending-x += sideways ? event.delta-y : event.delta-x;
         let rows = self.whole-notches(self.pending-y);
         let columns = self.whole-notches(self.pending-x);
         self.pending-y -= rows * 60px;

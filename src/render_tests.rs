@@ -73,6 +73,25 @@ fn a_sideways_notch_scrolls_the_system_wheel_chars() {
 }
 
 #[test]
+fn shift_turns_the_wheel_sideways() {
+    let _ = platform();
+    let view = WheelHarness::new().unwrap();
+    let shift = slint::SharedString::from(Key::Shift);
+    view.window().dispatch_event(WindowEvent::KeyPressed {
+        text: shift.clone(),
+    });
+    // Down scrolls right.
+    wheel(view.window(), -1.);
+    assert_eq!(view.get_content_x(), -24.);
+    assert_eq!(view.get_content_y(), 0.);
+    view.window()
+        .dispatch_event(WindowEvent::KeyReleased { text: shift });
+    wheel(view.window(), -1.);
+    assert_eq!(view.get_content_x(), -24.);
+    assert_eq!(view.get_content_y(), -30.);
+}
+
+#[test]
 fn a_negative_wheel_lines_scrolls_a_screen_less_a_line() {
     let _ = platform();
     let view = WheelHarness::new().unwrap();
