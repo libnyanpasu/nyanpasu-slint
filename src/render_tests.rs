@@ -92,6 +92,18 @@ fn shift_turns_the_wheel_sideways() {
 }
 
 #[test]
+fn shift_leaves_the_wheel_upright_when_nothing_runs_past_the_edge() {
+    let _ = platform();
+    let view = WheelHarness::new().unwrap();
+    view.set_content_width(100.);
+    view.window().dispatch_event(WindowEvent::KeyPressed {
+        text: Key::Shift.into(),
+    });
+    wheel(view.window(), -1.);
+    assert_eq!(view.get_content_y(), -30.);
+}
+
+#[test]
 fn a_negative_wheel_lines_scrolls_a_screen_less_a_line() {
     let _ = platform();
     let view = WheelHarness::new().unwrap();

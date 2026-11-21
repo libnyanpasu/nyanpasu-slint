@@ -31,9 +31,10 @@ export component WheelSteps inherits TouchArea {
         delta > 0 ? floor(delta / 60px) : -floor(-delta / 60px)
     }
     scroll-event(event) => {
-        // Shift turns the wheel sideways, as browsers do; where the system
-        // already does (macOS), the delta arrives sideways.
-        let sideways = event.modifiers.shift && event.delta-x == 0;
+        // Shift turns the wheel sideways, as browsers do, if there's room to
+        // scroll that way; where the system already does (macOS), the delta
+        // arrives sideways.
+        let sideways = event.modifiers.shift && event.delta-x == 0 && self.content-width > self.visible-width;
         self.pending-y += sideways ? 0px : event.delta-y;
         self.pending-x += sideways ? event.delta-y : event.delta-x;
         let rows = self.whole-notches(self.pending-y);

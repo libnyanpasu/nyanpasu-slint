@@ -4,6 +4,7 @@ import { LogView, WheelSteps } from "@nyanpasu-slint";
 // view.
 export component WheelHarness inherits Window {
     in property <int> wheel-lines: 3;
+    in property <length> content-width: 1000px;
     out property <length> content-y: steps.content-y;
     out property <length> content-x: steps.content-x;
     width: 100px;
@@ -14,7 +15,7 @@ export component WheelHarness inherits Window {
         content-height: 1000px;
         visible-height: 100px;
         char-width: 8px;
-        content-width: 1000px;
+        content-width: root.content-width;
         visible-width: 100px;
     }
 }
